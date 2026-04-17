@@ -1,3 +1,5 @@
+# hi this is someone else project but i deployed it through kubernetes using deployement,Service,and ingress
+
 ### Description
 
 A simple portfolio template for developer/designers built with React. 
