@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wimetrix-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wimetrix-app
+  template:
+    metadata:
+      labels:
+        app: wimetrix-app
+    spec:
+      containers:
+        - name: wimetrix-app
+          image: wimetirix/wimetrix-app:latest
+          ports:
+            - containerPort: 3000
