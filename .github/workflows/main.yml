@@ -1,4 +1,4 @@
-name: React App CI/CD Pipeline
+name: React Portfolio CI/CD
 
 on:
   push:
@@ -13,34 +13,39 @@ on:
 
 jobs:
   build-test-deploy:
-    runs-on: self-hosted   # your GitHub self-hosted runner
+    runs-on: self-hosted   # your runner (can be ubuntu VM/server)
 
     steps:
+      # 1. Get code
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # 2. Setup Node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 18
 
+      # 3. Install dependencies
       - name: Install Dependencies
         run: npm install
 
+      # 4. Run tests FIRST (best practice)
       - name: Run Tests
         run: npm test -- --watchAll=false
 
-      - name: Build React App
+      # 5. Build React app
+      - name: Build App
         run: npm run build
 
-      # 🔐 Login to Docker Hub
+      # 6. Login to Docker Hub
       - name: Docker Login
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # 🐳 Build Docker Image
+      # 7. Build Docker Image
       - name: Build Docker Image
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/react-portfolio:latest .
 
-      # 📤 Push to Docker Hub
+      # 8. Push Image to Docker Hub
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/react-portfolio:latest
