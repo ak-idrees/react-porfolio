@@ -9,43 +9,84 @@ on:
     branches:
       - main
 
-  workflow_dispatch:   # manual trigger
+  workflow_dispatch:
 
 jobs:
-  build-test-deploy:
-    runs-on: self-hosted   # your runner (can be ubuntu VM/server)
+
+  # =========================
+  # 1. BUILD JOB
+  # =========================
+  build:
+    runs-on: ubuntu-latest
 
     steps:
-      # 1. Get code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Setup Node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # 3. Install dependencies
       - name: Install Dependencies
         run: npm install
 
-      # 4. Run tests FIRST (best practice)
-      - name: Run Tests
-        run: npm test -- --watchAll=false
-
-      # 5. Build React app
       - name: Build App
         run: npm run build
 
-      # 6. Login to Docker Hub
+      # save build artifact for next jobs
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-files
+          path: build/
+
+
+  # =========================
+  # 2. TEST JOB
+  # =========================
+  test:
+    runs-on: ubuntu-latest
+    needs: build   # runs AFTER build job
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Tests
+        run: npm test -- --watchAll=false
+
+
+  # =========================
+  # 3. DEPLOY JOB (Docker Hub)
+  # =========================
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test   # runs AFTER test job
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-files
+          path: build/
+
       - name: Docker Login
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # 7. Build Docker Image
       - name: Build Docker Image
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/react-portfolio:latest .
 
-      # 8. Push Image to Docker Hub
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/react-portfolio:latest
